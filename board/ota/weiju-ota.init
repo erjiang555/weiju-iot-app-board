@@ -1,0 +1,24 @@
+#!/bin/sh
+APP=/opt/weiju-ota/ota_agent.py
+PIDFILE=/var/run/weiju-ota.pid
+running() {
+    [ -f "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE")
+    case "$pid" in ''|*[!0-9]*) return 1;; esac
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -Fq "$APP"
+}
+case "$1" in
+start)
+    if running; then echo "weiju-ota already running (PID $pid)"; exit 0; fi
+    /usr/bin/python3 "$APP" </dev/null >/dev/null 2>&1 &
+    echo "weiju-ota starting"
+    ;;
+stop)
+    if running; then kill "$pid"; fi
+    echo "weiju-ota stop requested"
+    ;;
+status) if running; then echo "weiju-ota running (PID $pid)"; else echo "weiju-ota stopped"; exit 1; fi;;
+restart) "$0" stop; sleep 3; "$0" start;;
+*) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac

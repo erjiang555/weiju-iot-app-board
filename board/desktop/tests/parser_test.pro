@@ -1,0 +1,9 @@
+QT += core qml network
+QT -= gui
+CONFIG += console c++11
+CONFIG -= app_bundle
+TEMPLATE = app
+TARGET = weather-parser-test
+INCLUDEPATH += ../src/QDesktop/weather
+SOURCES += parser_test.cpp ../src/QDesktop/weather/myjsonparse.cpp ../src/QDesktop/weather/weatherdata.cpp ../src/QDesktop/weather/mymodel.cpp
+HEADERS += ../src/QDesktop/weather/myjsonparse.h ../src/QDesktop/weather/weatherdata.h ../src/QDesktop/weather/mymodel.h

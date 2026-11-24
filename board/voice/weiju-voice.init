@@ -1,0 +1,35 @@
+#!/bin/sh
+APP=/opt/weiju-voice/voice_service.py
+PIDFILE=/var/run/weiju-voice.pid
+LD=/opt/weiju-voice/runtime/lib/arm-linux-gnueabihf/ld-linux-armhf.so.3
+LIBPATH=/opt/weiju-voice/runtime/lib/arm-linux-gnueabihf:/opt/weiju-voice/runtime/usr/lib/arm-linux-gnueabihf:/usr/lib:/lib
+
+running() {
+    [ -f "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE")
+    case "$pid" in ''|*[!0-9]*) return 1;; esac
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -Fq "$APP"
+}
+
+case "$1" in
+start)
+    if running; then echo "weiju-voice already running (PID $pid)"; exit 0; fi
+    mkdir -p /var/log/weiju-voice
+    "$LD" --library-path "$LIBPATH" /usr/bin/python3 "$APP" \
+        </dev/null >>/var/log/weiju-voice/stderr.log 2>&1 &
+    echo "weiju-voice loading offline model"
+    ;;
+stop)
+    if running; then
+        kill "$pid"
+        count=0
+        while running && [ "$count" -lt 20 ]; do sleep 1; count=$((count + 1)); done
+        if running; then echo "weiju-voice is still stopping"; exit 1; fi
+    fi
+    echo "weiju-voice stopped"
+    ;;
+restart) "$0" stop && "$0" start;;
+status) if running; then echo "weiju-voice running (PID $pid)"; else echo "weiju-voice stopped"; exit 1; fi;;
+*) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac

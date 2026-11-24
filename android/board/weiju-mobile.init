@@ -1,0 +1,27 @@
+#!/bin/sh
+APP=/opt/weiju-mobile/mobile_api.py
+PIDFILE=/var/run/weiju-mobile.pid
+running() {
+    [ -f "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE")
+    case "$pid" in ''|*[!0-9]*) return 1;; esac
+    [ -r "/proc/$pid/cmdline" ] || return 1
+    tr '\000' ' ' < "/proc/$pid/cmdline" | grep -Fq "$APP"
+}
+case "$1" in
+start)
+    if running; then exit 0; fi
+    /usr/bin/python3 "$APP" </dev/null >/dev/null 2>&1 &
+    ;;
+stop)
+    if running; then
+        kill "$pid"
+        count=0
+        while running && [ "$count" -lt 10 ]; do sleep 1; count=$((count + 1)); done
+        if running; then exit 1; fi
+    fi
+    ;;
+restart) "$0" stop && "$0" start;;
+status) if running; then echo "weiju-mobile running (PID $pid)"; else echo "weiju-mobile stopped"; exit 1; fi;;
+*) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac

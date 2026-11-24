@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.10)
+project(weiju_person_detector CXX)
+set(CMAKE_CXX_STANDARD 11)
+find_package(ncnn REQUIRED)
+add_executable(person_detector person_detector.cpp)
+target_include_directories(person_detector PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../references)
+target_link_libraries(person_detector ncnn)
+target_link_options(person_detector PRIVATE -static-libgcc)
